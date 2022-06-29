@@ -24,6 +24,7 @@ import qualified Elm.Details as Details
 import qualified Elm.ModuleName as ModuleName
 import qualified File
 import qualified Generate
+import qualified Generate.Export as Export
 import qualified Generate.Html as Html
 import qualified Reporting
 import qualified Reporting.Exit as Exit
@@ -49,6 +50,7 @@ data Flags =
 data Output
   = JS FilePath
   | Html FilePath
+  | Export FilePath
   | DevNull
 
 
@@ -117,7 +119,16 @@ runHelp root paths style (Flags debug optimize maybeOutput _ maybeDocs) =
                       builder <- toBuilder root details desiredMode artifacts
                       generate style target (Html.sandwich name builder) (NE.List name [])
 
-
+                Just (Export target) ->
+                  do  name <- hasOneMain artifacts
+                      -- For now we're only handling production builds in this case.
+                      -- The current code base isn't suited to exporting the AST,
+                      -- and I don't feel up to the task of refactoring it.
+                      generate
+                        style
+                        target
+                        (Export.generate)
+                        (NE.List name [])
 
 -- GET INFORMATION
 
@@ -295,6 +306,7 @@ parseOutput name
   | isDevNull name      = Just DevNull
   | hasExt ".html" name = Just (Html name)
   | hasExt ".js"   name = Just (JS name)
+  | hasExt ".json" name = Just (Export name)
   | otherwise           = Nothing
 
 
